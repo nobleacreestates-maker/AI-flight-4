@@ -2189,6 +2189,10 @@
 
             container.innerHTML = displayFlights.map((flight, index) => {
                 const isCheapest = flight.price === cheapestPrice;
+                const hasReturn = flight.return_date && (flight.return_departure_time || flight.is_round_trip);
+                const outboundStops = flight.outbound_stops || (flight.outbound_layovers ? flight.outbound_layovers.length : 0);
+                const returnStops = flight.return_stops || (flight.return_layovers ? flight.return_layovers.length : 0);
+
                 return `
                     <div class="flight-card ${isCheapest ? 'best-value' : ''}" style="margin-bottom:15px;">
                         <div class="flight-header">
@@ -2196,24 +2200,34 @@
                                 ${flight.airline_logo ? `<img src="${flight.airline_logo}" class="airline-logo" alt="${flight.airline}" onerror="this.style.display='none'">` : ''}
                                 <div>
                                     <div style="font-weight:600;font-size:18px;">${flight.airline || 'Multiple Airlines'}</div>
-                                    <div style="color:#666;font-size:13px;">${flight.outbound_date}${flight.return_date ? ` - ${flight.return_date}` : ' (One Way)'}</div>
+                                    <div style="color:#666;font-size:13px;">
+                                        ${hasReturn ? '✈️ Round Trip' : '✈️ One Way'} · ${flight.outbound_date}${hasReturn ? ` → ${flight.return_date}` : ''}
+                                    </div>
                                 </div>
                             </div>
                             <div style="text-align:right;">
                                 <div class="price-badge" style="font-size:22px;">£${flight.price || 'N/A'}</div>
                                 ${isCheapest ? '<div style="color:#10b981;font-size:12px;font-weight:600;margin-top:5px;">✓ Best Price</div>' : ''}
+                                ${hasReturn ? '<div style="color:#3b82f6;font-size:11px;margin-top:3px;">Total for round trip</div>' : ''}
                             </div>
                         </div>
 
-                        <div class="flight-times-grid">
+                        <!-- OUTBOUND FLIGHT -->
+                        <div style="background:#dbeafe;padding:8px 15px;border-radius:8px 8px 0 0;margin-top:15px;">
+                            <strong style="color:#1e40af;font-size:13px;">✈️ OUTBOUND · ${flight.outbound_date}</strong>
+                        </div>
+                        <div class="flight-times-grid" style="border-radius:0 0 8px 8px;margin-top:0;">
                             <div class="flight-endpoint">
                                 <div class="time">${flight.outbound_departure_time || '--:--'}</div>
                                 <div class="airport">${flight.outbound_departure_airport || 'DEP'}</div>
                             </div>
                             <div class="flight-duration">
-                                <div style="font-size:13px;">${flight.outbound_duration ? flight.outbound_duration + ' min' : flight.total_duration || 'Direct'}</div>
+                                <div style="font-size:13px;">${formatDuration(flight.outbound_duration) || flight.total_duration || '--'}</div>
                                 <div class="line"></div>
-                                <div style="font-size:11px;color:#999;">${flight.layovers && flight.layovers.length > 0 ? flight.layovers.length + ' stop(s)' : 'Direct'}</div>
+                                <div style="font-size:11px;color:#999;">
+                                    ${outboundStops > 0 ? `${outboundStops} stop${outboundStops > 1 ? 's' : ''}` : 'Direct'}
+                                    ${flight.outbound_layovers && flight.outbound_layovers.length > 0 ? ` (${flight.outbound_layovers.join(', ')})` : ''}
+                                </div>
                             </div>
                             <div class="flight-endpoint">
                                 <div class="time">${flight.outbound_arrival_time || '--:--'}</div>
@@ -2221,28 +2235,42 @@
                             </div>
                         </div>
 
-                        ${flight.return_date ? `
-                            <div class="flight-times-grid" style="background:#f0fdf4;">
+                        <!-- INBOUND/RETURN FLIGHT -->
+                        ${hasReturn ? `
+                            <div style="background:#dcfce7;padding:8px 15px;border-radius:8px 8px 0 0;margin-top:15px;">
+                                <strong style="color:#166534;font-size:13px;">🔙 RETURN · ${flight.return_date}</strong>
+                                ${flight.return_airline && flight.return_airline !== flight.airline ? `<span style="color:#059669;font-size:12px;margin-left:10px;">· ${flight.return_airline}</span>` : ''}
+                            </div>
+                            <div class="flight-times-grid" style="background:#f0fdf4;border-radius:0 0 8px 8px;margin-top:0;">
                                 <div class="flight-endpoint">
                                     <div class="time">${flight.return_departure_time || '--:--'}</div>
-                                    <div class="airport">${flight.outbound_arrival_airport || 'DEP'}</div>
+                                    <div class="airport">${flight.return_departure_airport || flight.outbound_arrival_airport || 'DEP'}</div>
                                 </div>
                                 <div class="flight-duration">
-                                    <div style="font-size:13px;">${flight.return_duration ? flight.return_duration + ' min' : 'Return'}</div>
+                                    <div style="font-size:13px;">${formatDuration(flight.return_duration) || '--'}</div>
                                     <div class="line" style="transform:scaleX(-1);"></div>
-                                    <div style="font-size:11px;color:#999;">Return Flight</div>
+                                    <div style="font-size:11px;color:#999;">
+                                        ${returnStops > 0 ? `${returnStops} stop${returnStops > 1 ? 's' : ''}` : 'Direct'}
+                                        ${flight.return_layovers && flight.return_layovers.length > 0 ? ` (${flight.return_layovers.join(', ')})` : ''}
+                                    </div>
                                 </div>
                                 <div class="flight-endpoint">
                                     <div class="time">${flight.return_arrival_time || '--:--'}</div>
-                                    <div class="airport">${flight.outbound_departure_airport || 'ARR'}</div>
+                                    <div class="airport">${flight.return_arrival_airport || flight.outbound_departure_airport || 'ARR'}</div>
                                 </div>
                             </div>
-                        ` : ''}
+                        ` : `
+                            <div style="background:#fef3c7;padding:12px 15px;border-radius:8px;margin-top:15px;text-align:center;">
+                                <span style="color:#92400e;font-size:13px;">ℹ️ One-way flight · No return included</span>
+                            </div>
+                        `}
 
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:15px;padding-top:15px;border-top:1px solid #e0e0e0;">
-                            <div style="display:flex;gap:15px;font-size:13px;color:#666;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:15px;padding-top:15px;border-top:1px solid #e0e0e0;flex-wrap:wrap;gap:10px;">
+                            <div style="display:flex;gap:15px;font-size:13px;color:#666;flex-wrap:wrap;">
                                 ${flight.total_duration ? `<span>⏱️ Total: ${flight.total_duration}</span>` : ''}
-                                ${flight.layovers && flight.layovers.length > 0 ? `<span>🛬 ${flight.layovers.length} layover(s)</span>` : '<span>✓ Direct flight</span>'}
+                                ${flight.flight_number ? `<span>🎫 ${flight.flight_number}</span>` : ''}
+                                ${flight.airplane ? `<span>🛩️ ${flight.airplane}</span>` : ''}
+                                ${flight.is_overnight ? `<span style="color:#7c3aed;">🌙 Overnight</span>` : ''}
                             </div>
                             <a href="${flight.booking_link}" target="_blank" class="book-btn" style="padding:10px 25px;">
                                 Book Now →
@@ -2293,6 +2321,19 @@
                 return hours * 60 + mins;
             }
             return 9999;
+        }
+
+        function formatDuration(duration) {
+            if (!duration) return null;
+            if (typeof duration === 'string') return duration;
+            if (typeof duration === 'number') {
+                const hours = Math.floor(duration / 60);
+                const mins = duration % 60;
+                if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+                if (hours > 0) return `${hours}h`;
+                return `${mins}m`;
+            }
+            return null;
         }
 
         function parseTime(time) {

@@ -367,36 +367,110 @@ class TravelPlanningAgent:
         return results
 
     def _extract_flight_details(self, flight, origin, destination, search_date, search_return):
-        """Extract flight details from API response"""
+        """Extract flight details from API response - handles both outbound and return flights"""
         flights_info = flight.get("flights", [])
-        outbound_flight = flights_info[0] if flights_info else {}
 
-        # Handle return flights - could be in flights array or separate
-        return_flight = None
-        if len(flights_info) > 1:
-            return_flight = flights_info[-1]  # Last flight is usually the return
+        if not flights_info:
+            return None
+
+        # For round trips, Google Flights API returns legs in the flights array
+        # Outbound segments go from origin to destination
+        # Return segments go from destination to origin
+
+        outbound_segments = []
+        return_segments = []
+
+        for segment in flights_info:
+            dep_airport = segment.get("departure_airport", {}).get("id", "")
+            arr_airport = segment.get("arrival_airport", {}).get("id", "")
+
+            # Determine if this segment is outbound or return based on airports
+            # Outbound: starts from origin or previous outbound arrival
+            # Return: starts from destination or goes back toward origin
+            if dep_airport == origin or (outbound_segments and not return_segments):
+                # Check if we've reached destination (end of outbound)
+                if arr_airport == destination:
+                    outbound_segments.append(segment)
+                elif not return_segments:
+                    outbound_segments.append(segment)
+                else:
+                    return_segments.append(segment)
+            elif dep_airport == destination or return_segments:
+                return_segments.append(segment)
+            else:
+                # Default to outbound if unclear
+                if not outbound_segments or (outbound_segments and outbound_segments[-1].get("arrival_airport", {}).get("id") != destination):
+                    outbound_segments.append(segment)
+                else:
+                    return_segments.append(segment)
+
+        # Get first outbound segment for departure info
+        outbound_first = outbound_segments[0] if outbound_segments else {}
+        # Get last outbound segment for arrival info
+        outbound_last = outbound_segments[-1] if outbound_segments else {}
+
+        # Get first return segment for departure info
+        return_first = return_segments[0] if return_segments else {}
+        # Get last return segment for arrival info
+        return_last = return_segments[-1] if return_segments else {}
+
+        # Calculate total outbound duration
+        outbound_duration = sum(seg.get("duration", 0) for seg in outbound_segments)
+        return_duration = sum(seg.get("duration", 0) for seg in return_segments)
+
+        # Get layover information
+        outbound_layovers = []
+        for i, seg in enumerate(outbound_segments[:-1]) if len(outbound_segments) > 1 else []:
+            layover_airport = seg.get("arrival_airport", {}).get("id", "")
+            if layover_airport:
+                outbound_layovers.append(layover_airport)
+
+        return_layovers = []
+        for i, seg in enumerate(return_segments[:-1]) if len(return_segments) > 1 else []:
+            layover_airport = seg.get("arrival_airport", {}).get("id", "")
+            if layover_airport:
+                return_layovers.append(layover_airport)
+
+        # Determine airline (use most prominent or first)
+        airlines = [seg.get("airline", "") for seg in outbound_segments if seg.get("airline")]
+        primary_airline = airlines[0] if airlines else "Multiple Airlines"
+        airline_logo = outbound_first.get("airline_logo", "")
 
         flight_details = {
             "outbound_date": search_date,
             "return_date": search_return,
             "price": flight.get("price"),
             "total_duration": flight.get("total_duration"),
-            "airline": outbound_flight.get("airline", "Unknown"),
-            "airline_logo": outbound_flight.get("airline_logo", ""),
-            "outbound_departure_time": outbound_flight.get("departure_airport", {}).get("time", ""),
-            "outbound_arrival_time": outbound_flight.get("arrival_airport", {}).get("time", ""),
-            "outbound_departure_airport": outbound_flight.get("departure_airport", {}).get("id", origin),
-            "outbound_arrival_airport": outbound_flight.get("arrival_airport", {}).get("id", destination),
-            "outbound_duration": outbound_flight.get("duration"),
-            "return_departure_time": return_flight.get("departure_airport", {}).get("time", "") if return_flight else "",
-            "return_arrival_time": return_flight.get("arrival_airport", {}).get("time", "") if return_flight else "",
-            "return_duration": return_flight.get("duration") if return_flight else "",
+
+            # Outbound flight details
+            "airline": primary_airline,
+            "airline_logo": airline_logo,
+            "outbound_departure_time": outbound_first.get("departure_airport", {}).get("time", ""),
+            "outbound_arrival_time": outbound_last.get("arrival_airport", {}).get("time", ""),
+            "outbound_departure_airport": outbound_first.get("departure_airport", {}).get("id", origin),
+            "outbound_arrival_airport": outbound_last.get("arrival_airport", {}).get("id", destination),
+            "outbound_duration": outbound_duration if outbound_duration else outbound_first.get("duration"),
+            "outbound_stops": len(outbound_segments) - 1 if len(outbound_segments) > 1 else 0,
+            "outbound_layovers": outbound_layovers,
+
+            # Return/Inbound flight details
+            "return_departure_time": return_first.get("departure_airport", {}).get("time", ""),
+            "return_arrival_time": return_last.get("arrival_airport", {}).get("time", ""),
+            "return_departure_airport": return_first.get("departure_airport", {}).get("id", destination) if return_first else "",
+            "return_arrival_airport": return_last.get("arrival_airport", {}).get("id", origin) if return_last else "",
+            "return_duration": return_duration if return_duration else (return_first.get("duration") if return_first else ""),
+            "return_stops": len(return_segments) - 1 if len(return_segments) > 1 else 0,
+            "return_layovers": return_layovers,
+            "return_airline": return_first.get("airline", primary_airline) if return_first else "",
+
+            # Booking and metadata
             "booking_link": f"https://www.google.com/travel/flights?q=Flights+from+{origin}+to+{destination}+on+{search_date}",
-            "layovers": outbound_flight.get("layovers", []),
-            "flight_number": outbound_flight.get("flight_number", ""),
-            "airplane": outbound_flight.get("airplane", ""),
+            "layovers": outbound_layovers + return_layovers,
+            "flight_number": outbound_first.get("flight_number", ""),
+            "airplane": outbound_first.get("airplane", ""),
             "carbon_emissions": flight.get("carbon_emissions", {}).get("this_flight"),
-            "is_overnight": outbound_flight.get("overnight", False)
+            "is_overnight": outbound_first.get("overnight", False),
+            "is_round_trip": bool(search_return and return_segments)
         }
 
         return flight_details if flight_details.get("price") else None
