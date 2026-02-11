@@ -157,12 +157,56 @@
             cursor: not-allowed;
         }
         
+        .service-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .service-toggle button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 20px;
+            border: 3px solid #e0e0e0;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .service-toggle button strong {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .service-toggle button small {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .service-toggle button.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .service-toggle button.active strong {
+            color: #667eea;
+        }
+
+        .service-toggle button:hover:not(.active) {
+            border-color: #a5b4fc;
+            background: #f8fafc;
+        }
+
         .trip-toggle, .accommodation-toggle {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
-        
+
         .trip-toggle button, .accommodation-toggle button {
             flex: 1;
             padding: 12px;
@@ -174,17 +218,129 @@
             transition: all 0.2s;
             font-size: 14px;
         }
-        
+
         .trip-toggle button.active {
             background: #667eea;
             color: white;
             border-color: #667eea;
         }
-        
+
         .accommodation-toggle button.active {
             background: #10b981;
             color: white;
             border-color: #10b981;
+        }
+
+        /* Nightlife section */
+        .nightlife-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .nightlife-card {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            border-radius: 12px;
+            overflow: hidden;
+            color: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .nightlife-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(30, 27, 75, 0.4);
+        }
+
+        .nightlife-header {
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .nightlife-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .nightlife-type {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .nightlife-content {
+            padding: 20px;
+        }
+
+        .music-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .music-tag {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .music-tag.primary {
+            background: #f59e0b;
+            color: #1e1b4b;
+        }
+
+        .nightlife-details {
+            font-size: 13px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .nightlife-footer {
+            padding: 15px 20px;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nightlife-price {
+            font-weight: 600;
+        }
+
+        .nightlife-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .music-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #1e1b4b;
+            border-radius: 12px;
+        }
+
+        .music-filter button {
+            padding: 8px 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            background: transparent;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .music-filter button.active,
+        .music-filter button:hover {
+            background: #f59e0b;
+            border-color: #f59e0b;
+            color: #1e1b4b;
         }
         
         .results-section {
@@ -940,19 +1096,37 @@
     <div class="container">
         <h1>✈️ AI Travel Planning Platform</h1>
         <p class="subtitle">Complete travel solution: Flights, Hotels, Airbnb & Restaurant Recommendations</p>
-        
+
         <div class="form-section">
             <form id="searchForm">
-                <div class="trip-toggle">
-                    <button type="button" class="active" data-type="return">Round Trip</button>
-                    <button type="button" data-type="oneway">One Way</button>
+                <!-- Service Type Toggle -->
+                <div class="form-group full-width" style="margin-bottom:25px;">
+                    <label style="margin-bottom:12px;">What would you like to plan?</label>
+                    <div class="service-toggle">
+                        <button type="button" class="active" data-service="full">
+                            <span style="font-size:24px;">🌍</span>
+                            <strong>Full Service</strong>
+                            <small>Flights + Hotels + Itinerary</small>
+                        </button>
+                        <button type="button" data-service="itinerary">
+                            <span style="font-size:24px;">📋</span>
+                            <strong>Itinerary Only</strong>
+                            <small>Activities, restaurants & nightlife</small>
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="origin">From</label>
-                        <select id="origin" required>
-                            <option value="">Select departure airport</option>
+
+                <div id="flightSection">
+                    <div class="trip-toggle">
+                        <button type="button" class="active" data-type="return">Round Trip</button>
+                        <button type="button" data-type="oneway">One Way</button>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="origin">From</label>
+                            <select id="origin">
+                                <option value="">Select departure airport</option>
                             <optgroup label="London Airports">
                                 <option value="LHR">London Heathrow (LHR)</option>
                                 <option value="LGW">London Gatwick (LGW)</option>
@@ -1231,33 +1405,109 @@
                     </div>
                 </div>
                 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="outboundDate">Departure Date</label>
-                        <input type="date" id="outboundDate" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="outboundDate">Departure Date</label>
+                            <input type="date" id="outboundDate" required>
+                        </div>
+
+                        <div class="form-group" id="returnDateGroup">
+                            <label for="returnDate">Return Date</label>
+                            <input type="date" id="returnDate" required>
+                        </div>
                     </div>
-                    
-                    <div class="form-group" id="returnDateGroup">
-                        <label for="returnDate">Return Date</label>
-                        <input type="date" id="returnDate" required>
+                </div><!-- End flightSection -->
+
+                <!-- Itinerary Only Destination (shown when service=itinerary) -->
+                <div id="itineraryOnlySection" style="display:none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itineraryDestination">Destination City</label>
+                            <select id="itineraryDestination">
+                                <option value="">Select destination</option>
+                                <optgroup label="Popular Europe">
+                                    <option value="BCN">Barcelona</option>
+                                    <option value="MAD">Madrid</option>
+                                    <option value="CDG">Paris</option>
+                                    <option value="FCO">Rome</option>
+                                    <option value="AMS">Amsterdam</option>
+                                    <option value="BER">Berlin</option>
+                                    <option value="LIS">Lisbon</option>
+                                    <option value="PRG">Prague</option>
+                                    <option value="VIE">Vienna</option>
+                                    <option value="ATH">Athens</option>
+                                    <option value="DUB">Dublin</option>
+                                    <option value="CPH">Copenhagen</option>
+                                </optgroup>
+                                <optgroup label="USA">
+                                    <option value="JFK">New York</option>
+                                    <option value="LAX">Los Angeles</option>
+                                    <option value="MIA">Miami</option>
+                                    <option value="SFO">San Francisco</option>
+                                    <option value="LAS">Las Vegas</option>
+                                    <option value="ORD">Chicago</option>
+                                </optgroup>
+                                <optgroup label="Asia">
+                                    <option value="NRT">Tokyo</option>
+                                    <option value="BKK">Bangkok</option>
+                                    <option value="SIN">Singapore</option>
+                                    <option value="HKG">Hong Kong</option>
+                                    <option value="DPS">Bali</option>
+                                </optgroup>
+                                <optgroup label="Middle East & Africa">
+                                    <option value="DXB">Dubai</option>
+                                    <option value="RAK">Marrakech</option>
+                                    <option value="CPT">Cape Town</option>
+                                </optgroup>
+                                <optgroup label="UK">
+                                    <option value="LHR">London</option>
+                                    <option value="EDI">Edinburgh</option>
+                                    <option value="MAN">Manchester</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="itineraryDuration">Trip Duration</label>
+                            <select id="itineraryDuration">
+                                <option value="2">2 Days (Weekend)</option>
+                                <option value="3">3 Days</option>
+                                <option value="4">4 Days</option>
+                                <option value="5" selected>5 Days</option>
+                                <option value="7">7 Days (1 Week)</option>
+                                <option value="10">10 Days</option>
+                                <option value="14">14 Days (2 Weeks)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itineraryStartDate">Start Date</label>
+                            <input type="date" id="itineraryStartDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="dailyBudget">Daily Budget (£)</label>
+                            <input type="number" id="dailyBudget" value="100" min="20" step="10">
+                        </div>
                     </div>
                 </div>
-                
-                <div class="form-group full-width">
-                    <label for="accommodationType">Accommodation Preference</label>
-                    <div class="accommodation-toggle">
-                        <button type="button" class="active" data-type="hotel">🏨 Hotels Only</button>
-                        <button type="button" data-type="airbnb">🏠 Airbnb Only</button>
-                        <button type="button" data-type="mixed">🔄 Show Both</button>
+
+                <div id="accommodationSection">
+                    <div class="form-group full-width">
+                        <label for="accommodationType">Accommodation Preference</label>
+                        <div class="accommodation-toggle">
+                            <button type="button" class="active" data-type="hotel">🏨 Hotels Only</button>
+                            <button type="button" data-type="airbnb">🏠 Airbnb Only</button>
+                            <button type="button" data-type="mixed">🔄 Show Both</button>
+                        </div>
                     </div>
                 </div>
-                
+
                 <div class="form-row-3">
-                    <div class="form-group">
+                    <div class="form-group" id="budgetGroup">
                         <label for="budget">Total Budget (£)</label>
                         <input type="number" id="budget" value="1000" min="100" step="50" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="tripType">Trip Type</label>
                         <select id="tripType">
@@ -1266,9 +1516,12 @@
                             <option value="adventure">Adventure</option>
                             <option value="romantic">Romantic</option>
                             <option value="family">Family</option>
+                            <option value="nightlife">Nightlife & Party</option>
+                            <option value="cultural">Cultural & Historic</option>
+                            <option value="foodie">Food & Culinary</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="travelers">Travelers</label>
                         <select id="travelers">
@@ -1280,13 +1533,13 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="form-group full-width">
                     <label for="keywordInput">Interests & Keywords</label>
                     <div id="keywordTags"></div>
-                    <input type="text" id="keywordInput" placeholder="Type and press Enter (e.g., food, museums, nightlife)">
+                    <input type="text" id="keywordInput" placeholder="Type and press Enter (e.g., food, museums, nightlife, techno, jazz)">
                 </div>
-                
+
                 <button type="submit" class="primary" id="submitBtn">
                     🚀 Search Flights & Accommodations + Generate Itinerary
                 </button>
@@ -1416,7 +1669,26 @@
                     <div class="accommodation-grid" id="cafesBarsList"></div>
                 </div>
             </div>
-            
+
+            <!-- Nightlife Section -->
+            <div class="section-card" id="nightlifeSection">
+                <h2>🎉 Nightlife & Clubs</h2>
+
+                <div class="music-filter" id="musicFilter">
+                    <button class="active" onclick="filterNightlife('all', this)">🎵 All</button>
+                    <button onclick="filterNightlife('electronic', this)">🎧 Electronic/House</button>
+                    <button onclick="filterNightlife('techno', this)">💀 Techno</button>
+                    <button onclick="filterNightlife('hiphop', this)">🎤 Hip-Hop/R&B</button>
+                    <button onclick="filterNightlife('latin', this)">💃 Latin/Reggaeton</button>
+                    <button onclick="filterNightlife('rock', this)">🎸 Rock/Indie</button>
+                    <button onclick="filterNightlife('jazz', this)">🎷 Jazz/Blues</button>
+                    <button onclick="filterNightlife('mixed', this)">🎶 Mixed/Commercial</button>
+                    <button onclick="filterNightlife('rooftop', this)">🌃 Rooftop/Lounge</button>
+                </div>
+
+                <div class="nightlife-grid" id="nightlifeList"></div>
+            </div>
+
             <!-- Daily Itinerary -->
             <div class="section-card">
                 <h2>🗓️ Day-by-Day Itinerary</h2>
@@ -1428,7 +1700,46 @@
     
     <script>
         const API_URL = window.location.origin;
-        
+
+        // Service type toggle (Full Service vs Itinerary Only)
+        let serviceType = 'full';
+        document.querySelectorAll('.service-toggle button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.service-toggle button').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                serviceType = e.target.dataset.service;
+
+                const flightSection = document.getElementById('flightSection');
+                const itineraryOnlySection = document.getElementById('itineraryOnlySection');
+                const accommodationSection = document.getElementById('accommodationSection');
+                const budgetGroup = document.getElementById('budgetGroup');
+                const submitBtn = document.getElementById('submitBtn');
+                const origin = document.getElementById('origin');
+                const destination = document.getElementById('destination');
+                const itineraryDestination = document.getElementById('itineraryDestination');
+
+                if (serviceType === 'full') {
+                    flightSection.style.display = 'block';
+                    itineraryOnlySection.style.display = 'none';
+                    accommodationSection.style.display = 'block';
+                    budgetGroup.querySelector('label').textContent = 'Total Budget (£)';
+                    submitBtn.innerHTML = '🚀 Search Flights & Accommodations + Generate Itinerary';
+                    origin.required = true;
+                    destination.required = true;
+                    itineraryDestination.required = false;
+                } else {
+                    flightSection.style.display = 'none';
+                    itineraryOnlySection.style.display = 'block';
+                    accommodationSection.style.display = 'none';
+                    budgetGroup.querySelector('label').textContent = 'Daily Budget (£)';
+                    submitBtn.innerHTML = '📋 Generate Personalized Itinerary';
+                    origin.required = false;
+                    destination.required = false;
+                    itineraryDestination.required = true;
+                }
+            });
+        });
+
         // Trip type toggle
         let tripType = 'return';
         document.querySelectorAll('.trip-toggle button').forEach(btn => {
@@ -1440,7 +1751,7 @@
                 document.getElementById('returnDate').required = tripType === 'return';
             });
         });
-        
+
         // Accommodation type toggle
         let accommodationType = 'hotel';
         document.querySelectorAll('.accommodation-toggle button').forEach(btn => {
@@ -1450,6 +1761,9 @@
                 accommodationType = e.target.dataset.type;
             });
         });
+
+        // Nightlife data storage
+        window.allNightlife = [];
         
         // Keywords
         const keywords = [];
@@ -1488,9 +1802,10 @@
         outbound.setDate(today.getDate() + 30);
         const returnDate = new Date(outbound);
         returnDate.setDate(outbound.getDate() + 7);
-        
+
         document.getElementById('outboundDate').value = outbound.toISOString().split('T')[0];
         document.getElementById('returnDate').value = returnDate.toISOString().split('T')[0];
+        document.getElementById('itineraryStartDate').value = outbound.toISOString().split('T')[0];
         
         // Default keywords
         ['food', 'culture', 'sightseeing'].forEach(kw => keywords.push(kw));
@@ -1512,37 +1827,60 @@
         // Form submission
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             document.getElementById('results').classList.remove('show');
             document.getElementById('error').classList.remove('show');
             document.getElementById('loading').classList.add('show');
             document.getElementById('submitBtn').disabled = true;
-            
+
             window.scrollTo({ top: document.getElementById('loading').offsetTop - 100, behavior: 'smooth' });
-            
-            const formData = {
-                origin: document.getElementById('origin').value,
-                destination: document.getElementById('destination').value,
-                outbound_date: document.getElementById('outboundDate').value,
-                return_date: tripType === 'return' ? document.getElementById('returnDate').value : null,
-                budget: parseInt(document.getElementById('budget').value),
-                keywords: keywords.length > 0 ? keywords : ['general travel'],
-                accommodation_type: accommodationType
-            };
-            
+
+            let formData;
+
+            if (serviceType === 'full') {
+                // Full service mode - flights + hotels + itinerary
+                formData = {
+                    service_type: 'full',
+                    origin: document.getElementById('origin').value,
+                    destination: document.getElementById('destination').value,
+                    outbound_date: document.getElementById('outboundDate').value,
+                    return_date: tripType === 'return' ? document.getElementById('returnDate').value : null,
+                    budget: parseInt(document.getElementById('budget').value),
+                    keywords: keywords.length > 0 ? keywords : ['general travel'],
+                    accommodation_type: accommodationType,
+                    trip_type: document.getElementById('tripType').value,
+                    travelers: document.getElementById('travelers').value
+                };
+            } else {
+                // Itinerary only mode
+                const startDate = document.getElementById('itineraryStartDate').value;
+                const duration = parseInt(document.getElementById('itineraryDuration').value);
+
+                formData = {
+                    service_type: 'itinerary_only',
+                    destination: document.getElementById('itineraryDestination').value,
+                    start_date: startDate,
+                    duration_days: duration,
+                    daily_budget: parseInt(document.getElementById('budget').value),
+                    keywords: keywords.length > 0 ? keywords : ['general travel'],
+                    trip_type: document.getElementById('tripType').value,
+                    travelers: document.getElementById('travelers').value
+                };
+            }
+
             try {
                 const response = await fetch(`${API_URL}/itinerary`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(formData)
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
-                
+
                 const data = await response.json();
-                displayResults(data);
+                displayResults(data, serviceType);
             } catch (error) {
                 showError(`Error: ${error.message}`);
             } finally {
@@ -1559,28 +1897,70 @@
             return stars;
         }
         
-        function displayResults(data) {
+        function displayResults(data, mode = 'full') {
+            // Show/hide sections based on mode
+            const flightSection = document.querySelector('.section-card:has(#flightsContainer)') || document.querySelectorAll('.section-card')[1];
+            const accommodationSection = document.querySelector('.section-card:has(#accommodationTabs)') || document.querySelectorAll('.section-card')[2];
+            const budgetSection = document.querySelectorAll('.section-card')[0];
+
+            // Get all section cards
+            const sectionCards = document.querySelectorAll('.section-card');
+            sectionCards.forEach((card, index) => {
+                const header = card.querySelector('h2');
+                if (header) {
+                    const text = header.textContent;
+                    if (text.includes('Flight') || text.includes('Accommodation')) {
+                        card.style.display = mode === 'itinerary_only' ? 'none' : 'block';
+                    }
+                    if (text.includes('Budget')) {
+                        // Update budget section based on mode
+                        if (mode === 'itinerary_only') {
+                            card.querySelector('h2').innerHTML = '💰 Daily Budget Overview';
+                        } else {
+                            card.querySelector('h2').innerHTML = '💰 Budget Overview';
+                        }
+                    }
+                }
+            });
+
             // Budget Overview
             const budgetGrid = document.getElementById('budgetGrid');
-            budgetGrid.innerHTML = `
-                <div class="budget-item">
-                    <div class="budget-label">Total Budget</div>
-                    <div class="budget-value">£${data.total_budget}</div>
-                </div>
-                <div class="budget-item">
-                    <div class="budget-label">Flight Cost</div>
-                    <div class="budget-value">£${data.recommended_flight_cost || 0}</div>
-                </div>
-                <div class="budget-item">
-                    <div class="budget-label">Remaining</div>
-                    <div class="budget-value">£${data.remaining_budget}</div>
-                </div>
-                <div class="budget-item">
-                    <div class="budget-label">Trip Duration</div>
-                    <div class="budget-value">${data.trip_duration} days</div>
-                </div>
-            `;
-            
+            if (mode === 'itinerary_only') {
+                budgetGrid.innerHTML = `
+                    <div class="budget-item">
+                        <div class="budget-label">Daily Budget</div>
+                        <div class="budget-value">£${data.daily_budget || data.total_budget}</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label">Trip Duration</div>
+                        <div class="budget-value">${data.trip_duration} days</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label">Est. Total</div>
+                        <div class="budget-value">£${(data.daily_budget || data.total_budget) * data.trip_duration}</div>
+                    </div>
+                `;
+            } else {
+                budgetGrid.innerHTML = `
+                    <div class="budget-item">
+                        <div class="budget-label">Total Budget</div>
+                        <div class="budget-value">£${data.total_budget}</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label">Flight Cost</div>
+                        <div class="budget-value">£${data.recommended_flight_cost || 0}</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label">Remaining</div>
+                        <div class="budget-value">£${data.remaining_budget}</div>
+                    </div>
+                    <div class="budget-item">
+                        <div class="budget-label">Trip Duration</div>
+                        <div class="budget-value">${data.trip_duration} days</div>
+                    </div>
+                `;
+            }
+
             // Store flights globally for sorting/filtering
             window.allFlights = data.flight_options || [];
             window.displayedFlights = [...window.allFlights];
@@ -1790,7 +2170,15 @@
                     cafesBarsList.innerHTML = '<p style="color:#666;padding:20px;text-align:center;">Café & bar recommendations coming soon</p>';
                 }
             }
-            
+
+            // Nightlife Section
+            if (data.itinerary && data.itinerary.nightlife) {
+                displayNightlife(data.itinerary.nightlife);
+                document.getElementById('nightlifeSection').style.display = 'block';
+            } else {
+                document.getElementById('nightlifeSection').style.display = 'none';
+            }
+
             // Itinerary
             displayItinerary(data.itinerary);
             
@@ -2363,6 +2751,93 @@
             } else if (tab === 'cafes') {
                 document.getElementById('cafesTab').style.display = 'block';
             }
+        }
+
+        // Nightlife display and filtering
+        function displayNightlife(nightlife) {
+            window.allNightlife = nightlife || [];
+            renderNightlife(window.allNightlife);
+        }
+
+        function renderNightlife(venues) {
+            const container = document.getElementById('nightlifeList');
+
+            if (!venues || venues.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center;padding:40px;color:white;">
+                        <div style="font-size:48px;margin-bottom:15px;">🌙</div>
+                        <p>No nightlife venues found for this destination.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = venues.map(venue => `
+                <div class="nightlife-card" data-music="${(venue.music_types || []).join(',').toLowerCase()}">
+                    <div class="nightlife-header">
+                        <div class="nightlife-name">${venue.name}</div>
+                        <div class="nightlife-type">${venue.venue_type || 'Club'}</div>
+                    </div>
+                    <div class="nightlife-content">
+                        <div class="music-tags">
+                            ${(venue.music_types || ['Mixed']).map((m, i) => `
+                                <span class="music-tag ${i === 0 ? 'primary' : ''}">${m}</span>
+                            `).join('')}
+                        </div>
+                        <div class="nightlife-details">
+                            <p>${venue.description || ''}</p>
+                            ${venue.best_nights ? `<p style="margin-top:8px;"><strong>🔥 Best nights:</strong> ${venue.best_nights}</p>` : ''}
+                            ${venue.dress_code ? `<p><strong>👔 Dress code:</strong> ${venue.dress_code}</p>` : ''}
+                            ${venue.age_restriction ? `<p><strong>🎂 Age:</strong> ${venue.age_restriction}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="nightlife-footer">
+                        <div class="nightlife-price">
+                            ${venue.entry_fee ? `Entry: £${venue.entry_fee}` : 'Free entry'}
+                            ${venue.drink_prices ? ` · Drinks: £${venue.drink_prices}` : ''}
+                        </div>
+                        <div class="nightlife-rating">
+                            ${venue.rating ? `⭐ ${venue.rating}` : ''}
+                        </div>
+                    </div>
+                    ${venue.neighborhood ? `
+                        <div style="padding:10px 20px;background:rgba(255,255,255,0.1);font-size:12px;">
+                            📍 ${venue.neighborhood} ${venue.opening_hours ? `· ${venue.opening_hours}` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function filterNightlife(musicType, btn) {
+            // Update button states
+            document.querySelectorAll('#musicFilter button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (musicType === 'all') {
+                renderNightlife(window.allNightlife);
+                return;
+            }
+
+            const filtered = window.allNightlife.filter(venue => {
+                const types = (venue.music_types || []).map(t => t.toLowerCase());
+                const searchTerm = musicType.toLowerCase();
+
+                // Match music type keywords
+                return types.some(t =>
+                    t.includes(searchTerm) ||
+                    (searchTerm === 'electronic' && (t.includes('house') || t.includes('edm') || t.includes('electronic'))) ||
+                    (searchTerm === 'techno' && (t.includes('techno') || t.includes('industrial'))) ||
+                    (searchTerm === 'hiphop' && (t.includes('hip') || t.includes('r&b') || t.includes('rap'))) ||
+                    (searchTerm === 'latin' && (t.includes('latin') || t.includes('reggaeton') || t.includes('salsa'))) ||
+                    (searchTerm === 'rock' && (t.includes('rock') || t.includes('indie') || t.includes('alternative'))) ||
+                    (searchTerm === 'jazz' && (t.includes('jazz') || t.includes('blues') || t.includes('soul'))) ||
+                    (searchTerm === 'mixed' && (t.includes('mixed') || t.includes('commercial') || t.includes('top 40'))) ||
+                    (searchTerm === 'rooftop' && (t.includes('lounge') || t.includes('rooftop') || t.includes('chill')))
+                );
+            });
+
+            renderNightlife(filtered);
         }
     </script>
 </body>
