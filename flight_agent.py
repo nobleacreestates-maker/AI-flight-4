@@ -475,8 +475,8 @@ class TravelPlanningAgent:
 
         return flight_details if flight_details.get("price") else None
     
-    def create_structured_itinerary(self, destination_code, keywords, budget, duration_days, hotels):
-        """GUARANTEED itinerary generation - ALWAYS returns complete data"""
+    def create_structured_itinerary(self, destination_code, keywords, budget, duration_days, hotels, days_info=None, trip_type='leisure'):
+        """GUARANTEED itinerary generation - ALWAYS returns complete data with day-of-week awareness"""
         city_name = get_city_name(destination_code)
 
         print(f"\n=== CREATING ITINERARY ===")
@@ -484,6 +484,7 @@ class TravelPlanningAgent:
         print(f"Duration: {duration_days} days")
         print(f"Budget: £{budget}")
         print(f"Keywords: {keywords}")
+        print(f"Trip type: {trip_type}")
 
         # Build hotel context
         hotel_info = ""
@@ -493,7 +494,27 @@ class TravelPlanningAgent:
             for hotel in top_hotels:
                 hotel_info += f"- {hotel.get('name', 'N/A')}: £{hotel.get('rate_per_night', {}).get('lowest', 'N/A')}/night\n"
 
-        # Enhanced prompt with more itinerary options
+        # Build day-of-week context
+        days_context = ""
+        if days_info:
+            days_context = "\n\nSPECIFIC DAYS (plan activities appropriate for each day):\n"
+            for d in days_info:
+                weekend_note = "WEEKEND - more nightlife, brunches, leisure activities" if d['is_weekend'] else "WEEKDAY - some venues may be closed, but fewer crowds"
+                days_context += f"- Day {d['day']}: {d['weekday']} ({d['date']}) - {weekend_note}\n"
+
+        # Trip type specific guidance
+        trip_guidance = {
+            'leisure': 'balanced mix of sightseeing, relaxation, and local experiences',
+            'business': 'efficient itinerary with good restaurants for meetings, quieter evenings',
+            'adventure': 'active experiences, outdoor activities, unique thrills',
+            'romantic': 'intimate venues, scenic spots, special dining experiences',
+            'family': 'kid-friendly activities, parks, interactive museums, early dinners',
+            'nightlife': 'late starts, focus on evening/night activities, clubs and bars',
+            'cultural': 'museums, galleries, historic sites, local traditions',
+            'foodie': 'food tours, cooking classes, market visits, best restaurants'
+        }.get(trip_type, 'balanced mix of activities')
+
+        # Enhanced prompt with day-of-week awareness and nightlife
         prompt = f"""You are creating a comprehensive {duration_days}-day travel itinerary for {city_name}.
 
 CRITICAL REQUIREMENTS:
@@ -502,6 +523,16 @@ CRITICAL REQUIREMENTS:
 3. Include EXACTLY {duration_days} days in daily_itinerary array
 4. Include 6-8 restaurants for breakfast, lunch, AND dinner
 5. Include alternative activities and hidden gems
+6. Include 8-12 nightlife venues with SPECIFIC music types
+7. IMPORTANT: Plan activities APPROPRIATE FOR EACH DAY OF WEEK:
+   - Weekends: More nightlife options, brunch spots, later wake-up activities
+   - Weekdays: Some venues closed, but museums/attractions less crowded
+   - Fridays/Saturdays: Best nights for clubs and bars
+   - Sundays: Many shops closed, good for markets and relaxed activities
+   - Mondays: Many museums closed - plan alternatives
+{days_context}
+
+Trip type: {trip_type.upper()} - Focus on {trip_guidance}
 
 JSON Structure (copy this exactly):
 {{
@@ -517,8 +548,10 @@ JSON Structure (copy this exactly):
   "daily_itinerary": [
     {{
       "day": 1,
-      "theme": "Theme for day 1",
+      "weekday": "Saturday",
+      "theme": "Theme appropriate for this day of week",
       "weather_tip": "What to expect/wear this time of year",
+      "day_note": "Why these activities suit this day (e.g., 'Weekend markets are open')",
       "early_morning": {{
         "time": "7:00 AM",
         "activity": "Optional early activity (sunrise spots, markets)",
@@ -611,6 +644,16 @@ JSON Structure (copy this exactly):
       {{"name": "Café/Bar name", "type": "Coffee shop/Wine bar/Cocktail bar", "vibe": "Atmosphere description", "must_try": "Signature drink", "neighborhood": "Area"}}
     ]
   }},
+  "nightlife": [
+    {{"name": "Club/Bar Name", "venue_type": "Nightclub/Rooftop Bar/Live Music Venue/Lounge", "music_types": ["House", "Techno"], "description": "What makes it special", "best_nights": "Friday, Saturday", "dress_code": "Smart casual", "entry_fee": 15, "drink_prices": "8-15", "opening_hours": "11pm-6am", "age_restriction": "21+", "neighborhood": "Nightlife District", "rating": 4.5}},
+    {{"name": "Jazz Club", "venue_type": "Jazz Club", "music_types": ["Jazz", "Blues"], "description": "Intimate live music", "best_nights": "Thursday-Saturday", "dress_code": "Smart casual", "entry_fee": 10, "drink_prices": "10-18", "opening_hours": "8pm-2am", "age_restriction": "18+", "neighborhood": "Arts District", "rating": 4.7}},
+    {{"name": "Latin Night Spot", "venue_type": "Dance Club", "music_types": ["Latin", "Reggaeton", "Salsa"], "description": "Hot Latin beats", "best_nights": "Friday, Saturday", "dress_code": "Casual", "entry_fee": 12, "drink_prices": "6-12", "opening_hours": "10pm-4am", "age_restriction": "18+", "neighborhood": "Downtown", "rating": 4.4}},
+    {{"name": "Rooftop Lounge", "venue_type": "Rooftop Bar", "music_types": ["Lounge", "Deep House", "Chill"], "description": "Stunning views and cocktails", "best_nights": "Any night", "dress_code": "Smart", "entry_fee": 0, "drink_prices": "12-20", "opening_hours": "6pm-2am", "age_restriction": "21+", "neighborhood": "City Center", "rating": 4.6}},
+    {{"name": "Underground Techno", "venue_type": "Underground Club", "music_types": ["Techno", "Industrial", "Minimal"], "description": "For serious techno lovers", "best_nights": "Friday, Saturday", "dress_code": "All black encouraged", "entry_fee": 20, "drink_prices": "8-12", "opening_hours": "midnight-8am", "age_restriction": "21+", "neighborhood": "Industrial Area", "rating": 4.8}},
+    {{"name": "Hip Hop Club", "venue_type": "Nightclub", "music_types": ["Hip-Hop", "R&B", "Rap"], "description": "Urban beats and vibes", "best_nights": "Friday, Saturday", "dress_code": "Streetwear/Smart", "entry_fee": 15, "drink_prices": "8-15", "opening_hours": "11pm-5am", "age_restriction": "18+", "neighborhood": "Trendy Area", "rating": 4.3}},
+    {{"name": "Rock Venue", "venue_type": "Live Music Venue", "music_types": ["Rock", "Indie", "Alternative"], "description": "Live bands nightly", "best_nights": "Wednesday-Saturday", "dress_code": "Casual", "entry_fee": 10, "drink_prices": "5-10", "opening_hours": "8pm-3am", "age_restriction": "18+", "neighborhood": "Music Quarter", "rating": 4.5}},
+    {{"name": "Commercial Club", "venue_type": "Mainstream Club", "music_types": ["Mixed", "Commercial", "Top 40", "EDM"], "description": "Popular hits all night", "best_nights": "Thursday-Saturday", "dress_code": "Smart casual", "entry_fee": 12, "drink_prices": "7-14", "opening_hours": "10pm-4am", "age_restriction": "18+", "neighborhood": "Main Strip", "rating": 4.2}}
+  ],
   "must_see_attractions": [
     {{"name": "Top attraction", "why": "Why it's unmissable", "time_needed": "2-3 hours", "best_time": "Early morning", "cost": 20, "skip_if": "When to skip it"}}
   ],
@@ -629,10 +672,13 @@ JSON Structure (copy this exactly):
   }}
 }}
 
-MUST include {duration_days} complete days with all time slots (early_morning, morning, morning_alternative, lunch_break, afternoon, afternoon_alternative, evening, night, hidden_gem).
+MUST include {duration_days} complete days with all time slots.
+MUST include 8-12 nightlife venues with VARIED music types (electronic, techno, hip-hop, latin, rock, jazz, mixed/commercial, rooftop/lounge).
+Plan activities appropriate for each specific day of week.
 
 User interests: {', '.join(keywords)}
 Budget: £{budget}
+Trip type: {trip_type}
 {hotel_info}
 
 Respond with ONLY the JSON object above."""
@@ -677,13 +723,18 @@ Respond with ONLY the JSON object above."""
             if "restaurants" not in itinerary_data or not itinerary_data["restaurants"]:
                 print("❌ NO restaurants - using fallback")
                 itinerary_data["restaurants"] = self._get_default_restaurants(city_name)
-            
+
+            if "nightlife" not in itinerary_data or not itinerary_data["nightlife"]:
+                print("❌ NO nightlife - using fallback")
+                itinerary_data["nightlife"] = self._get_default_nightlife(city_name)
+
             print(f"✅ Itinerary created successfully:")
             print(f"   - Days: {len(itinerary_data['daily_itinerary'])}")
             print(f"   - Breakfast: {len(itinerary_data['restaurants'].get('breakfast', []))}")
             print(f"   - Lunch: {len(itinerary_data['restaurants'].get('lunch', []))}")
             print(f"   - Dinner: {len(itinerary_data['restaurants'].get('dinner', []))}")
-            
+            print(f"   - Nightlife: {len(itinerary_data.get('nightlife', []))}")
+
             return itinerary_data
             
         except Exception as e:
@@ -730,6 +781,21 @@ Respond with ONLY the JSON object above."""
                 {"name": "Craft Beer House", "type": "Beer bar", "vibe": "Casual and friendly", "must_try": "Local craft beers", "neighborhood": "Trendy Area"}
             ]
         }
+
+    def _get_default_nightlife(self, city_name):
+        """Fallback nightlife data with varied music types"""
+        return [
+            {"name": f"{city_name} Main Club", "venue_type": "Nightclub", "music_types": ["House", "Electronic", "EDM"], "description": "The city's premier nightclub with top DJs", "best_nights": "Friday, Saturday", "dress_code": "Smart casual", "entry_fee": 15, "drink_prices": "8-15", "opening_hours": "11pm-6am", "age_restriction": "18+", "neighborhood": "Nightlife District", "rating": 4.5},
+            {"name": "Underground Beats", "venue_type": "Underground Club", "music_types": ["Techno", "Minimal", "Industrial"], "description": "Raw techno experience for purists", "best_nights": "Friday, Saturday", "dress_code": "Dark/casual", "entry_fee": 20, "drink_prices": "6-12", "opening_hours": "Midnight-8am", "age_restriction": "21+", "neighborhood": "Industrial Area", "rating": 4.7},
+            {"name": "Smooth Jazz Lounge", "venue_type": "Jazz Club", "music_types": ["Jazz", "Blues", "Soul"], "description": "Intimate live jazz performances", "best_nights": "Thursday-Saturday", "dress_code": "Smart casual", "entry_fee": 10, "drink_prices": "10-18", "opening_hours": "8pm-2am", "age_restriction": "18+", "neighborhood": "Arts District", "rating": 4.6},
+            {"name": "Latin Heat", "venue_type": "Latin Club", "music_types": ["Latin", "Reggaeton", "Salsa", "Bachata"], "description": "Hot Latin rhythms and dancing", "best_nights": "Friday, Saturday", "dress_code": "Smart casual", "entry_fee": 12, "drink_prices": "6-12", "opening_hours": "10pm-4am", "age_restriction": "18+", "neighborhood": "Downtown", "rating": 4.4},
+            {"name": "Urban Vibes", "venue_type": "Hip-Hop Club", "music_types": ["Hip-Hop", "R&B", "Rap", "Afrobeats"], "description": "Urban beats and street culture", "best_nights": "Friday, Saturday", "dress_code": "Streetwear/Smart", "entry_fee": 15, "drink_prices": "8-14", "opening_hours": "11pm-5am", "age_restriction": "18+", "neighborhood": "Trendy District", "rating": 4.3},
+            {"name": "Skyline Rooftop", "venue_type": "Rooftop Bar", "music_types": ["Lounge", "Deep House", "Chill"], "description": "Panoramic views and craft cocktails", "best_nights": "Any night", "dress_code": "Smart", "entry_fee": 0, "drink_prices": "12-20", "opening_hours": "6pm-2am", "age_restriction": "21+", "neighborhood": "City Center", "rating": 4.8},
+            {"name": "Rock House", "venue_type": "Live Music Venue", "music_types": ["Rock", "Indie", "Alternative", "Metal"], "description": "Live bands and rock classics", "best_nights": "Wednesday-Saturday", "dress_code": "Casual", "entry_fee": 8, "drink_prices": "5-10", "opening_hours": "8pm-3am", "age_restriction": "18+", "neighborhood": "Music Quarter", "rating": 4.5},
+            {"name": "Mainstream Mix", "venue_type": "Mainstream Club", "music_types": ["Mixed", "Commercial", "Top 40", "Pop"], "description": "Chart hits and party anthems", "best_nights": "Thursday-Saturday", "dress_code": "Smart casual", "entry_fee": 10, "drink_prices": "7-14", "opening_hours": "10pm-4am", "age_restriction": "18+", "neighborhood": "Main Strip", "rating": 4.2},
+            {"name": "Cocktail Society", "venue_type": "Cocktail Lounge", "music_types": ["Lounge", "Chill", "Acoustic"], "description": "Sophisticated cocktails in elegant setting", "best_nights": "Any night", "dress_code": "Smart", "entry_fee": 0, "drink_prices": "12-18", "opening_hours": "6pm-1am", "age_restriction": "21+", "neighborhood": "Uptown", "rating": 4.6},
+            {"name": "Student Union", "venue_type": "Student Bar", "music_types": ["Mixed", "Indie", "Pop", "Chart"], "description": "Affordable drinks and fun crowd", "best_nights": "Thursday, Friday", "dress_code": "Casual", "entry_fee": 5, "drink_prices": "3-8", "opening_hours": "9pm-3am", "age_restriction": "18+", "neighborhood": "University Area", "rating": 4.1}
+        ]
     
     def _get_default_itinerary(self, city_name, days):
         """Fallback daily itinerary with enhanced options"""
@@ -843,6 +909,7 @@ Respond with ONLY the JSON object above."""
             },
             "daily_itinerary": self._get_default_itinerary(city_name, duration_days),
             "restaurants": self._get_default_restaurants(city_name),
+            "nightlife": self._get_default_nightlife(city_name),
             "must_see_attractions": [
                 {"name": "Main Historic Site", "why": "The most iconic landmark", "time_needed": "2-3 hours", "best_time": "Early morning", "cost": 20, "skip_if": "Very crowded days"},
                 {"name": "Famous Museum", "why": "World-class collection", "time_needed": "3-4 hours", "best_time": "Weekday afternoon", "cost": 15, "skip_if": "Limited time"},
@@ -895,110 +962,191 @@ def home():
 @app.route('/itinerary', methods=['POST'])
 def create_itinerary():
     data = request.json
-    
+
+    service_type = data.get('service_type', 'full')
     destination = data.get('destination')
     keywords = data.get('keywords', [])
-    budget = data.get('budget', 1000)
-    origin = data.get('origin')
-    outbound_date = data.get('outbound_date')
-    return_date = data.get('return_date')
-    accommodation_type = data.get('accommodation_type', 'hotel')
-    
+    trip_type = data.get('trip_type', 'leisure')
+    travelers = data.get('travelers', '2')
+
     destination_city = get_city_name(destination)
-    
+
     print(f"\n{'='*50}")
-    print(f"NEW REQUEST")
+    print(f"NEW REQUEST - {service_type.upper()} SERVICE")
     print(f"{'='*50}")
     print(f"Destination: {destination_city}")
-    print(f"Budget: £{budget}")
-    
-    if not all([destination, origin, outbound_date]):
-        return jsonify({"error": "Missing required fields"}), 400
-    
-    # Calculate duration
-    if return_date:
-        start = datetime.strptime(outbound_date, "%Y-%m-%d")
-        end = datetime.strptime(return_date, "%Y-%m-%d")
-        duration_days = (end - start).days
-    else:
+
+    if service_type == 'itinerary_only':
+        # ITINERARY ONLY MODE
+        start_date = data.get('start_date')
         duration_days = data.get('duration_days', 5)
-        return_date = (datetime.strptime(outbound_date, "%Y-%m-%d") + timedelta(days=duration_days)).strftime("%Y-%m-%d")
-    
-    print(f"Duration: {duration_days} days")
-    
-    # Search flights
-    all_flights = agent.analyze_flexible_dates(origin, destination, outbound_date, return_date, 7)
-    best_flights = agent.find_best_value_flights(all_flights)
-    print(f"Flights: {len(best_flights)} options")
-    
-    # Search accommodations
-    hotel_options = []
-    airbnb_options = []
-    
-    if accommodation_type in ['hotel', 'mixed']:
-        hotels = agent.search_hotels(destination, outbound_date, return_date)
-        if hotels and "properties" in hotels:
-            for hotel in hotels.get("properties", [])[:10]:
-                hotel_options.append({
-                    "name": hotel.get("name", "N/A"),
-                    "price_per_night": hotel.get("rate_per_night", {}).get("lowest", "N/A"),
-                    "total_price": hotel.get("total_rate", {}).get("lowest", "N/A"),
-                    "rating": hotel.get("overall_rating", "N/A"),
-                    "reviews": hotel.get("reviews", 0),
-                    "link": hotel.get("link", "#"),
-                    "description": hotel.get("description", "")[:200],
-                    "images": hotel.get("images", [])[:3],
-                    "amenities": hotel.get("amenities", [])[:5],
-                    "type": "hotel"
-                })
-        print(f"Hotels: {len(hotel_options)} found")
-    
-    if accommodation_type in ['airbnb', 'mixed']:
-        airbnb_listings = agent.search_airbnb(destination, outbound_date, return_date)
-        for listing in airbnb_listings:
-            airbnb_options.append({
-                "name": listing.get("name"),
-                "price_per_night": listing.get("price_per_night"),
-                "total_price": listing.get("total_price"),
-                "description": listing.get("description"),
-                "link": listing.get("link"),
-                "type": "airbnb",
-                "property_type": listing.get("type")
+        daily_budget = data.get('daily_budget', 100)
+
+        if not destination:
+            return jsonify({"error": "Missing destination"}), 400
+
+        # Calculate day of week for each day
+        if start_date:
+            start_datetime = datetime.strptime(start_date, "%Y-%m-%d")
+        else:
+            start_datetime = datetime.now() + timedelta(days=30)
+            start_date = start_datetime.strftime("%Y-%m-%d")
+
+        # Generate day info with weekday names
+        days_info = []
+        for i in range(duration_days):
+            day_date = start_datetime + timedelta(days=i)
+            days_info.append({
+                "day": i + 1,
+                "date": day_date.strftime("%Y-%m-%d"),
+                "weekday": day_date.strftime("%A"),
+                "is_weekend": day_date.weekday() >= 5
             })
-        print(f"Airbnb: {len(airbnb_options)} found")
-    
-    # Calculate costs
-    flight_cost = best_flights[0].get('price', 0) if best_flights else 0
-    remaining_budget = budget - flight_cost
-    
-    # Create itinerary - GUARANTEED
-    itinerary = agent.create_structured_itinerary(
-        destination, 
-        keywords, 
-        remaining_budget, 
-        duration_days, 
-        hotels if accommodation_type in ['hotel', 'mixed'] else None
-    )
-    
-    print(f"\n{'='*50}")
-    print(f"RESPONSE READY")
-    print(f"{'='*50}\n")
-    
-    return jsonify({
-        "destination": destination_city,
-        "keywords": keywords,
-        "total_budget": budget,
-        "trip_duration": duration_days,
-        "outbound_date": outbound_date,
-        "return_date": return_date,
-        "flight_options": best_flights,
-        "recommended_flight_cost": flight_cost,
-        "hotel_options": hotel_options,
-        "airbnb_options": airbnb_options,
-        "accommodation_type": accommodation_type,
-        "remaining_budget": remaining_budget,
-        "itinerary": itinerary
-    })
+
+        print(f"Duration: {duration_days} days starting {start_date}")
+        print(f"Daily Budget: £{daily_budget}")
+        print(f"Days: {[(d['weekday'], d['is_weekend']) for d in days_info]}")
+
+        # Create enhanced itinerary with day-of-week awareness
+        itinerary = agent.create_structured_itinerary(
+            destination,
+            keywords,
+            daily_budget * duration_days,
+            duration_days,
+            None,
+            days_info=days_info,
+            trip_type=trip_type
+        )
+
+        print(f"\n{'='*50}")
+        print(f"ITINERARY ONLY RESPONSE READY")
+        print(f"{'='*50}\n")
+
+        return jsonify({
+            "service_type": "itinerary_only",
+            "destination": destination_city,
+            "keywords": keywords,
+            "daily_budget": daily_budget,
+            "total_budget": daily_budget * duration_days,
+            "trip_duration": duration_days,
+            "start_date": start_date,
+            "days_info": days_info,
+            "itinerary": itinerary
+        })
+
+    else:
+        # FULL SERVICE MODE (flights + hotels + itinerary)
+        budget = data.get('budget', 1000)
+        origin = data.get('origin')
+        outbound_date = data.get('outbound_date')
+        return_date = data.get('return_date')
+        accommodation_type = data.get('accommodation_type', 'hotel')
+
+        print(f"Budget: £{budget}")
+
+        if not all([destination, origin, outbound_date]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        # Calculate duration
+        if return_date:
+            start = datetime.strptime(outbound_date, "%Y-%m-%d")
+            end = datetime.strptime(return_date, "%Y-%m-%d")
+            duration_days = (end - start).days
+        else:
+            duration_days = data.get('duration_days', 5)
+            return_date = (datetime.strptime(outbound_date, "%Y-%m-%d") + timedelta(days=duration_days)).strftime("%Y-%m-%d")
+
+        # Generate day info with weekday names
+        start_datetime = datetime.strptime(outbound_date, "%Y-%m-%d")
+        days_info = []
+        for i in range(duration_days):
+            day_date = start_datetime + timedelta(days=i)
+            days_info.append({
+                "day": i + 1,
+                "date": day_date.strftime("%Y-%m-%d"),
+                "weekday": day_date.strftime("%A"),
+                "is_weekend": day_date.weekday() >= 5
+            })
+
+        print(f"Duration: {duration_days} days")
+        print(f"Days: {[(d['weekday'], d['is_weekend']) for d in days_info]}")
+
+        # Search flights
+        all_flights = agent.analyze_flexible_dates(origin, destination, outbound_date, return_date, 7)
+        best_flights = agent.find_best_value_flights(all_flights)
+        print(f"Flights: {len(best_flights)} options")
+
+        # Search accommodations
+        hotel_options = []
+        airbnb_options = []
+
+        if accommodation_type in ['hotel', 'mixed']:
+            hotels = agent.search_hotels(destination, outbound_date, return_date)
+            if hotels and "properties" in hotels:
+                for hotel in hotels.get("properties", [])[:10]:
+                    hotel_options.append({
+                        "name": hotel.get("name", "N/A"),
+                        "price_per_night": hotel.get("rate_per_night", {}).get("lowest", "N/A"),
+                        "total_price": hotel.get("total_rate", {}).get("lowest", "N/A"),
+                        "rating": hotel.get("overall_rating", "N/A"),
+                        "reviews": hotel.get("reviews", 0),
+                        "link": hotel.get("link", "#"),
+                        "description": hotel.get("description", "")[:200],
+                        "images": hotel.get("images", [])[:3],
+                        "amenities": hotel.get("amenities", [])[:5],
+                        "type": "hotel"
+                    })
+            print(f"Hotels: {len(hotel_options)} found")
+
+        if accommodation_type in ['airbnb', 'mixed']:
+            airbnb_listings = agent.search_airbnb(destination, outbound_date, return_date)
+            for listing in airbnb_listings:
+                airbnb_options.append({
+                    "name": listing.get("name"),
+                    "price_per_night": listing.get("price_per_night"),
+                    "total_price": listing.get("total_price"),
+                    "description": listing.get("description"),
+                    "link": listing.get("link"),
+                    "type": "airbnb",
+                    "property_type": listing.get("type")
+                })
+            print(f"Airbnb: {len(airbnb_options)} found")
+
+        # Calculate costs
+        flight_cost = best_flights[0].get('price', 0) if best_flights else 0
+        remaining_budget = budget - flight_cost
+
+        # Create itinerary with day-of-week awareness
+        itinerary = agent.create_structured_itinerary(
+            destination,
+            keywords,
+            remaining_budget,
+            duration_days,
+            hotels if accommodation_type in ['hotel', 'mixed'] else None,
+            days_info=days_info,
+            trip_type=trip_type
+        )
+
+        print(f"\n{'='*50}")
+        print(f"FULL SERVICE RESPONSE READY")
+        print(f"{'='*50}\n")
+
+        return jsonify({
+            "service_type": "full",
+            "destination": destination_city,
+            "keywords": keywords,
+            "total_budget": budget,
+            "trip_duration": duration_days,
+            "outbound_date": outbound_date,
+            "return_date": return_date,
+            "flight_options": best_flights,
+            "recommended_flight_cost": flight_cost,
+            "hotel_options": hotel_options,
+            "airbnb_options": airbnb_options,
+            "accommodation_type": accommodation_type,
+            "remaining_budget": remaining_budget,
+            "itinerary": itinerary
+        })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
